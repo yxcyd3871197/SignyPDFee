@@ -1,10 +1,15 @@
-const express = require('express');
-const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
-const fs = require('fs').promises;
-const path = require('path');
-const { v4: uuidv4 } = require('uuid');
-const pdfConfig = require('./pdfConfig');
-const dataUriToBuffer = require('data-uri-to-buffer'); // Für die Unterschrift
+import express from 'express';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { promises as fs } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { v4 as uuidv4 } from 'uuid';
+import { dataUriToBuffer } from 'data-uri-to-buffer';
+import multer from 'multer';
+import pdfConfig from './pdfConfig.mjs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -14,7 +19,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 // Multer configuration for file uploads
-const multer = require('multer');
 const storage = multer.memoryStorage(); // Store the file in memory
 const upload = multer({ storage: storage });
 
@@ -94,10 +98,40 @@ app.post('/api/pdf-config', async (req, res) => {
         const templateBytes = await fs.readFile(templatePath);
         const pdfDoc = await PDFDocument.load(templateBytes);
         const pages = pdfDoc.getPages();
-        const lastPage = pages[pages.length - 1]; // Add signature to the last page
+        const page9 = pages[8]; // 0-based index for page 9
+        const page10 = pages[9]; // 0-based index for page 10
         const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-        // Draw labels and text fields
+        // Function to draw text fields on a page
+        const drawTextFields = (page, yOffset = 0) => {
+            // Draw labels and text fields
+            for (const [field, value] of Object.entries(textFields)) {
+                if (pdfConfig.labels[field]) {
+                    // Draw label
+                    const labelConfig = pdfConfig.labels[field];
+                    page.drawText(labelConfig.text, {
+                        x: labelConfig.x,
+                        y: labelConfig.y + yOffset,
+                        size: labelConfig.fontSize,
+                        font: helveticaFont,
+                        color: rgb(labelConfig.color.r, labelConfig.color.g, labelConfig.color.b)
+                    });
+
+                    // Draw text field value
+                    if (value && pdfConfig.textFields[field]) {
+                        const fieldConfig = pdfConfig.textFields[field];
+                        page.drawText(value, {
+                            x: fieldConfig.x,
+                            y: fieldConfig.y + yOffset,
+                            size: fieldConfig.fontSize,
+                            font: helveticaFont,
+                            color: rgb(fieldConfig.color.r, fieldConfig.color.g, fieldConfig.color.b)
+                        });
+                    }
+                }
+            }
+        };
+
         const textFields = {
             fullName,
             email,
@@ -105,107 +139,96 @@ app.post('/api/pdf-config', async (req, res) => {
             date: date || new Date().toLocaleDateString('de-DE')
         };
 
-        // Draw labels and corresponding text fields
-        for (const [field, value] of Object.entries(textFields)) {
-            if (pdfConfig.labels[field]) {
-                // Draw label
-                const labelConfig = pdfConfig.labels[field];
-                lastPage.drawText(labelConfig.text, {
-                    x: labelConfig.x,
-                    y: labelConfig.y,
-                    size: labelConfig.fontSize,
-                    font: helveticaFont,
-                    color: rgb(labelConfig.color.r, labelConfig.color.g, labelConfig.color.b)
-                });
-
-                // Draw text field value
-                if (value && pdfConfig.textFields[field]) {
-                    const fieldConfig = pdfConfig.textFields[field];
-                    lastPage.drawText(value, {
-                        x: fieldConfig.x,
-                        y: fieldConfig.y,
-                        size: fieldConfig.fontSize,
-                        font: helveticaFont,
-                        color: rgb(fieldConfig.color.r, fieldConfig.color.g, fieldConfig.color.b)
-                    });
-                }
-            }
-        }
-
-        // Add contract signature to PDF
-        if (signature) {
+        // Function to add signature and fields to a page
+        const addSignatureToPage = async (page, signatureConfig, signatureData, fields) => {
             try {
-                const signatureImageBytes = dataUriToBuffer(signature);
-                const signatureImage = await pdfDoc.embedPng(signatureImageBytes);
-                lastPage.drawImage(signatureImage, {
-                    x: pdfConfig.contractSignature.x,
-                    y: pdfConfig.contractSignature.y,
-                    width: pdfConfig.contractSignature.width,
-                    height: pdfConfig.contractSignature.height,
+                const pageWidth = page.getWidth();
+                const pageHeight = page.getHeight();
+                const spacing = 25; // Spacing between fields
+
+                // Draw text fields in order
+                const fieldOrder = ['fullName', 'email', 'location', 'date'];
+                const startY = signatureConfig.textBlockY;
+
+                fieldOrder.forEach((fieldName, index) => {
+                    const y = startY - (index * spacing);
+                    const value = fields[fieldName];
+                    const labelText = pdfConfig.labels[fieldName].text;
+                    
+                    // Draw label
+                    page.drawText(labelText, {
+                        x: 150,
+                        y,
+                        size: 12,
+                        font: helveticaFont,
+                        color: rgb(0, 0, 0)
+                    });
+
+                    // Draw value
+                    page.drawText(value, {
+                        x: 250,
+                        y,
+                        size: 12,
+                        font: helveticaFont,
+                        color: rgb(0, 0, 0)
+                    });
                 });
 
-                // Draw a line under the signature
-                lastPage.drawLine({
-                    start: { x: pdfConfig.contractSignature.x, y: pdfConfig.contractSignature.y },
-                    end: { x: pdfConfig.contractSignature.x + pdfConfig.contractSignature.width, y: pdfConfig.contractSignature.y },
-                    thickness: 1,
-                    color: rgb(0, 0, 0),
-                });
-
-                // Draw contract signature label
-                lastPage.drawText(pdfConfig.contractSignature.label.text, {
-                    x: pdfConfig.contractSignature.label.x,
-                    y: pdfConfig.contractSignature.label.y,
-                    size: pdfConfig.contractSignature.label.fontSize,
+                // Draw signature label
+                page.drawText(signatureConfig.label.text, {
+                    x: 150,
+                    y: startY - (fieldOrder.length * spacing) - 10,
+                    size: 12,
                     font: helveticaFont,
-                    color: rgb(
-                        pdfConfig.contractSignature.label.color.r,
-                        pdfConfig.contractSignature.label.color.g,
-                        pdfConfig.contractSignature.label.color.b
-                    )
+                    color: rgb(0, 0, 0)
+                });
+
+                // Draw signature
+                const signatureImageBytes = Buffer.from(signatureData.split(',')[1], 'base64');
+                const signatureImage = await pdfDoc.embedPng(signatureImageBytes);
+                
+                // Center the signature horizontally
+                const signatureX = (pageWidth - signatureConfig.width) / 2;
+                
+                page.drawImage(signatureImage, {
+                    x: signatureX,
+                    y: startY - (fieldOrder.length * spacing) - 40, // Position below the label
+                    width: signatureConfig.width,
+                    height: signatureConfig.height,
                 });
             } catch (error) {
-                console.error("Fehler beim Einfügen der Vertragsunterschrift:", error);
-                res.status(500).json({ error: "Fehler beim Einfügen der Vertragsunterschrift: " + error.message });
+                throw new Error(`Fehler beim Einfügen der Unterschrift: ${error.message}`);
+            }
+        };
+
+        // Add withdrawal signature to page 9
+        if (withdrawalAccepted && withdrawalSignature) {
+            try {
+                await addSignatureToPage(
+                    pages[pdfConfig.withdrawalSignature.page],
+                    pdfConfig.withdrawalSignature,
+                    withdrawalSignature,
+                    textFields
+                );
+            } catch (error) {
+                console.error("Fehler beim Einfügen der Widerrufsunterschrift:", error);
+                res.status(500).json({ error: "Fehler beim Einfügen der Widerrufsunterschrift: " + error.message });
                 return;
             }
         }
 
-        // Add withdrawal signature to PDF if accepted
-        if (withdrawalAccepted && withdrawalSignature) {
+        // Add contract signature to page 10
+        if (signature) {
             try {
-                const withdrawalImageBytes = dataUriToBuffer(withdrawalSignature);
-                const withdrawalImage = await pdfDoc.embedPng(withdrawalImageBytes);
-                lastPage.drawImage(withdrawalImage, {
-                    x: pdfConfig.withdrawalSignature.x,
-                    y: pdfConfig.withdrawalSignature.y,
-                    width: pdfConfig.withdrawalSignature.width,
-                    height: pdfConfig.withdrawalSignature.height,
-                });
-
-                // Draw a line under the withdrawal signature
-                lastPage.drawLine({
-                    start: { x: pdfConfig.withdrawalSignature.x, y: pdfConfig.withdrawalSignature.y },
-                    end: { x: pdfConfig.withdrawalSignature.x + pdfConfig.withdrawalSignature.width, y: pdfConfig.withdrawalSignature.y },
-                    thickness: 1,
-                    color: rgb(0, 0, 0),
-                });
-
-                // Draw withdrawal signature label
-                lastPage.drawText(pdfConfig.withdrawalSignature.label.text, {
-                    x: pdfConfig.withdrawalSignature.label.x,
-                    y: pdfConfig.withdrawalSignature.label.y,
-                    size: pdfConfig.withdrawalSignature.label.fontSize,
-                    font: helveticaFont,
-                    color: rgb(
-                        pdfConfig.withdrawalSignature.label.color.r,
-                        pdfConfig.withdrawalSignature.label.color.g,
-                        pdfConfig.withdrawalSignature.label.color.b
-                    )
-                });
+                await addSignatureToPage(
+                    pages[pdfConfig.contractSignature.page],
+                    pdfConfig.contractSignature,
+                    signature,
+                    textFields
+                );
             } catch (error) {
-                console.error("Fehler beim Einfügen der Widerrufsunterschrift:", error);
-                res.status(500).json({ error: "Fehler beim Einfügen der Widerrufsunterschrift: " + error.message });
+                console.error("Fehler beim Einfügen der Vertragsunterschrift:", error);
+                res.status(500).json({ error: "Fehler beim Einfügen der Vertragsunterschrift: " + error.message });
                 return;
             }
         }

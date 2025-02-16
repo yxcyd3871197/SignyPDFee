@@ -110,43 +110,48 @@ withdrawalCheckbox.addEventListener('change', function() {
 // Validate form fields
 function validateForm() {
     let isValid = true;
+    const errors = [];
 
-    // Validate required fields
-    const requiredFields = {
-        'fullName': 'Bitte füllen Sie dieses Feld aus.',
-        'location': 'Bitte füllen Sie dieses Feld aus.',
-        'email': 'Bitte geben Sie eine gültige E-Mail-Adresse ein.'
+    // Function to add error
+    const addError = (message, elementId) => {
+        showError(message, elementId);
+        errors.push(message);
+        isValid = false;
     };
 
-    for (const [fieldId, message] of Object.entries(requiredFields)) {
-        const field = document.getElementById(fieldId);
-        if (!field.value.trim()) {
-            showError(message, fieldId);
-            isValid = false;
-        }
+    // Validate required fields
+    if (!document.getElementById('fullName').value.trim()) {
+        addError('Bitte füllen Sie dieses Feld aus.', 'fullName');
+    }
+    if (!document.getElementById('location').value.trim()) {
+        addError('Bitte füllen Sie dieses Feld aus.', 'location');
+    }
+    if (!document.getElementById('email').value.trim()) {
+        addError('Bitte füllen Sie dieses Feld aus.', 'email');
     }
 
     // Validate terms checkbox
     const termsCheckbox = document.getElementById('terms');
     if (!termsCheckbox.checked) {
-        showError('Sie müssen den Vertragsbedingungen zustimmen, bevor Sie unterschreiben können.', 'terms');
-        isValid = false;
+        addError('Zustimmung zu den Vertragsbedingungen fehlt.', 'terms');
     }
 
     // Validate contract signature
     if (contractSignaturePad.isEmpty()) {
-        showError('Unterschrift erforderlich.', 'signature-pad');
-        isValid = false;
+        addError('Unterschrift Vertrag fehlt.', 'signature-pad');
     }
 
-    // Validate withdrawal signature if checkbox is checked
-    if (withdrawalCheckbox.checked && withdrawalSignaturePad.isEmpty()) {
-        showError('Sie müssen dem Erlöschen des Widerrufsrechts zustimmen, bevor Sie unterschreiben können.', 'withdrawal-signature-pad');
-        isValid = false;
+    // Validate withdrawal checkbox and signature
+    if (!withdrawalCheckbox.checked) {
+        addError('Zustimmung zum Erlöschen des Widerrufsrechts fehlt.', 'withdrawal-checkbox');
+    } else if (withdrawalSignaturePad.isEmpty()) {
+        addError('Unterschrift Erlöschen des Widerrufsrechts fehlt.', 'withdrawal-signature-pad');
     }
 
     if (!isValid) {
-        showError('Bitte setzen Sie beide Unterschriften und bestätigen Sie beide Checkboxen, bevor Sie absenden können.');
+        // Show all error messages at once
+        const errorSummary = 'Folgende Pflichtfelder fehlen:\n- ' + errors.join('\n- ');
+        showError(errorSummary);
     }
 
     return isValid;
