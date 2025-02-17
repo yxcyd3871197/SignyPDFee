@@ -78,6 +78,30 @@
             <div id="success-message" class="success-message" style="display: none;"></div>
         </form>
     </div>
+
+    <footer>
+        <p class="footer-text">
+            <span id="copyright"></span> 
+            <a href="https://darmgesundheitscoach.de/" target="_blank" style="color: #13384a; text-decoration: none;">Darmgesundheitscoach.de</a>
+        </p>
+    </footer>
+
+    <script>
+        document.getElementById("copyright").innerHTML = `Copyright © ${new Date().getFullYear()} `;
+    </script>
+
     <script src="script.js"></script>
+
+    <style>
+        footer {
+            text-align: center;
+            padding: 10px;
+            margin-top: 20px;
+        }
+        .footer-text {
+            font-size: 14px;
+            color: #13384a;
+        }
+    </style>
 </body>
 </html>

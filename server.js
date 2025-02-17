@@ -187,12 +187,9 @@ app.post('/api/pdf-config', async (req, res) => {
                 const signatureImageBytes = Buffer.from(signatureData.split(',')[1], 'base64');
                 const signatureImage = await pdfDoc.embedPng(signatureImageBytes);
                 
-                // Center the signature horizontally
-                const signatureX = (pageWidth - signatureConfig.width) / 2;
-                
                 page.drawImage(signatureImage, {
-                    x: signatureX,
-                    y: startY - (fieldOrder.length * spacing) - 40, // Position below the label
+                    x: signatureConfig.x,
+                    y: signatureConfig.y,
                     width: signatureConfig.width,
                     height: signatureConfig.height,
                 });
