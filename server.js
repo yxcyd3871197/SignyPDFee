@@ -406,5 +406,40 @@ app.get('/test-template', async (req, res) => {
     try {
         const templatePath = path.join(__dirname, 'templates', 'Datenblatt_13000108.pdf');
         const pdfBytes = await fs.readFile(templatePath);
-        
-        const
+              const pdfId = uuidv4();
+        const filename = 'uploaded_' + pdfId + '.pdf';
+        await uploadPdfToCloudBucket(pdfBytes, filename);
+        const pdfUrl = await getCloudBucketUrl(filename);
+        const signUrl = `/sign/${pdfId}`;
+        // Store PDF data with fixed webhook URL
+        pdfStore.set(pdfId, {
+            filename,
+            pdfUrl,
+            signUrl,
+            webhookUrl: WEBHOOK_URL
+        });
+        res.json({ pdfUrl, signUrl });
+    } catch (error) {
+        console.error('Error loading template:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+app.listen(port, () => {
+    console.log(`Server läuft auf Port ${port}`);
+    console.log(`Aktuelles Verzeichnis: ${__dirname}`);
+});
+async function uploadPdfToCloudBucket(pdfBytes, filename) {
+    // TODO: Implement Google Cloud Storage upload
+    // This function should upload the pdfBytes to a Google Cloud Storage bucket
+    // with the given filename.
+    console.log(`Uploading ${filename} to Google Cloud Storage...`);
+    const pdfPath = path.join(__dirname, 'public', filename);
+    await fs.writeFile(pdfPath, pdfBytes); // Temporarily save to public folder
+    console.log(`PDF-Datei gespeichert unter: ${pdfPath}`);
+}
+async function getCloudBucketUrl(filename) {
+    // TODO: Implement Google Cloud Storage URL retrieval
+    // This function should return the public URL of the PDF in Google Cloud Storage.
+    console.log(`Getting Google Cloud Storage URL for ${filename}...`);
+    return `/${filename}`; // Temporarily return local URL
+}
