@@ -130,12 +130,19 @@ app.post('/api/pdf-upload', upload.single('pdf'), async (req, res) => {
         const pdfUrl = await getCloudBucketUrl(filename);
         const signUrl = `/sign/${pdfId}`;
 
-        // Store PDF data with fixed webhook URL
+        // Speichert die Werte aus der URL für späteren Webhook
+
+        const { email, vorname, card_id } = req.query;
+
+
+
         pdfStore.set(pdfId, {
             filename,
             pdfUrl,
             signUrl,
-            webhookUrl: WEBHOOK_URL
+            email: email || null,
+            vorname: vorname || null,
+            card_id: card_id || null
         });
 
         res.json({ pdfUrl, signUrl });
