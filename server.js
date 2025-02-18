@@ -130,17 +130,19 @@ app.post('/api/pdf-upload', upload.single('pdf'), async (req, res) => {
         const pdfUrl = await getCloudBucketUrl(filename);
         const signUrl = `/sign/${pdfId}`;
 
-        // Speichert die Werte aus der URL für späteren Webhook
-
-        const { email, vorname, card_id } = req.query;
-
-
+        // Parse die webhookUrl aus den formData-Feldern
+        const webhookUrlField = req.body.webhookUrl;
+        
+        // Parse die URL um die Parameter zu extrahieren
+        const webhookUrl = new URL(webhookUrlField);
+        const vorname = webhookUrl.searchParams.get('vorname');
+        const card_id = webhookUrl.searchParams.get('card_id');
 
         pdfStore.set(pdfId, {
             filename,
             pdfUrl,
             signUrl,
-            email: email || null,
+            webhookUrl: WEBHOOK_URL,
             vorname: vorname || null,
             card_id: card_id || null
         });
@@ -365,7 +367,7 @@ app.post('/api/sign', async (req, res) => {
 
         const signedPdfUrl = await getCloudBucketUrl(signedFilename);
 
-        // Send webhook notification
+        // Send webhook notification with stored data
         try {
             const fetch = (await import('node-fetch')).default;
             await fetch(WEBHOOK_URL, {
@@ -381,6 +383,8 @@ app.post('/api/sign', async (req, res) => {
                         email: email,
                         location: location
                     },
+                    vorname: pdfData.vorname,         // Gespeicherte Daten mitsenden
+                    card_id: pdfData.card_id,         // Gespeicherte Daten mitsenden
                     withdrawalAccepted: withdrawalAccepted,
                     timestamp: new Date().toISOString()
                 }),
@@ -403,46 +407,4 @@ app.get('/test-template', async (req, res) => {
         const templatePath = path.join(__dirname, 'templates', 'Datenblatt_13000108.pdf');
         const pdfBytes = await fs.readFile(templatePath);
         
-        const pdfId = uuidv4();
-        const filename = 'uploaded_' + pdfId + '.pdf';
-        await uploadPdfToCloudBucket(pdfBytes, filename);
-
-        const pdfUrl = await getCloudBucketUrl(filename);
-        const signUrl = `/sign/${pdfId}`;
-
-        // Store PDF data with fixed webhook URL
-        pdfStore.set(pdfId, {
-            filename,
-            pdfUrl,
-            signUrl,
-            webhookUrl: WEBHOOK_URL
-        });
-
-        res.json({ pdfUrl, signUrl });
-    } catch (error) {
-        console.error('Error loading template:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.listen(port, () => {
-    console.log(`Server läuft auf Port ${port}`);
-    console.log(`Aktuelles Verzeichnis: ${__dirname}`);
-});
-
-async function uploadPdfToCloudBucket(pdfBytes, filename) {
-    // TODO: Implement Google Cloud Storage upload
-    // This function should upload the pdfBytes to a Google Cloud Storage bucket
-    // with the given filename.
-    console.log(`Uploading ${filename} to Google Cloud Storage...`);
-    const pdfPath = path.join(__dirname, 'public', filename);
-    await fs.writeFile(pdfPath, pdfBytes); // Temporarily save to public folder
-    console.log(`PDF-Datei gespeichert unter: ${pdfPath}`);
-}
-
-async function getCloudBucketUrl(filename) {
-    // TODO: Implement Google Cloud Storage URL retrieval
-    // This function should return the public URL of the PDF in Google Cloud Storage.
-    console.log(`Getting Google Cloud Storage URL for ${filename}...`);
-    return `/${filename}`; // Temporarily return local URL
-}
+        const
