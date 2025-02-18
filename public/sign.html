@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Unterschreiben</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Dokument unterschreiben</h1>
+        </header>
+
+        <div id="pdf-container">
+            <div id="pdf-pages"></div>
+        </div>
+
+        <form id="signature-form" class="form-container">
+            <div class="form-group">
+                <label for="fullName">Vollständiger Name</label>
+                <input type="text" id="fullName" name="fullName" required>
+            </div>
+
+            <div class="form-group">
+                <label for="location">Ort</label>
+                <input type="text" id="location" name="location" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">E-Mail</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+
+            <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="terms" required>
+                    Hiermit stimme ich den Vertragsbedingungen verbindlich zu.
+                </label>
+            </div>
+
+            <div class="signature-group">
+                <h3>Unterschrift Vertrag</h3>
+                <canvas id="signature-pad"></canvas>
+                <div class="signature-status"></div>
+                <div class="button-container">
+                    <button type="button" id="clear-signature" class="btn-delete">Signatur löschen</button>
+                </div>
+            </div>
+
+            <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="withdrawal-checkbox">
+                    Hiermit stimme ich zu, dass der Veranstalter mit der Ausführung des Vertrages
+                    vor Ablauf der Widerrufsfrist beginnt. Ich habe zur Kenntnis genommen, dass
+                    ich mit dieser Zustimmung mit Beginn der Ausführung des Vertrages mein
+                    Widerrufsrecht verliere.
+                </label>
+            </div>
+
+            <div class="signature-group">
+                <h3>Unterschrift Erlöschen des Widerrufsrechts</h3>
+                <canvas id="withdrawal-signature-pad"></canvas>
+                <div class="signature-status"></div>
+                <div class="button-container">
+                    <button type="button" id="clear-withdrawal-signature" class="btn-delete">Signatur löschen</button>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" id="submit-form" class="btn-submit">Unterschreiben & Absenden</button>
+            </div>
+
+            <div id="error-message" class="error-message" style="display: none;"></div>
+            <div id="success-message" class="success-message" style="display: none;"></div>
+        </form>
+    </div>
+
+    <script src="/sign-script.js"></script>
+</body>
+</html>

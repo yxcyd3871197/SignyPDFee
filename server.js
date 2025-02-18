@@ -11,6 +11,71 @@ import pdfConfig from './pdfConfig.mjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/**
+ * Adds signature and fields to a PDF page
+ * @param {PDFPage} page - The PDF page to add content to
+ * @param {Object} signatureConfig - Configuration for signature placement
+ * @param {string} signatureData - Base64 encoded signature image data
+ * @param {Object} fields - Text fields to add to the page
+ * @param {PDFDocument} pdfDoc - The PDF document instance
+ * @param {PDFFont} helveticaFont - The embedded Helvetica font
+ */
+async function addSignatureToPage(page, signatureConfig, signatureData, fields, pdfDoc, helveticaFont) {
+    try {
+        const spacing = 25; // Spacing between fields
+
+        // Draw text fields in order
+        const fieldOrder = ['fullName', 'email', 'location', 'date'];
+        const startY = signatureConfig.textBlockY;
+
+        fieldOrder.forEach((fieldName, index) => {
+            const y = startY - (index * spacing);
+            const value = fields[fieldName];
+            const labelText = pdfConfig.labels[fieldName].text;
+            
+            // Draw label
+            page.drawText(labelText, {
+                x: 150,
+                y,
+                size: 12,
+                font: helveticaFont,
+                color: rgb(0, 0, 0)
+            });
+
+            // Draw value
+            page.drawText(value, {
+                x: 250,
+                y,
+                size: 12,
+                font: helveticaFont,
+                color: rgb(0, 0, 0)
+            });
+        });
+
+        // Draw signature label
+        page.drawText(signatureConfig.label.text, {
+            x: 150,
+            y: startY - (fieldOrder.length * spacing) - 10,
+            size: 12,
+            font: helveticaFont,
+            color: rgb(0, 0, 0)
+        });
+
+        // Draw signature
+        const signatureImageBytes = Buffer.from(signatureData.split(',')[1], 'base64');
+        const signatureImage = await pdfDoc.embedPng(signatureImageBytes);
+        
+        page.drawImage(signatureImage, {
+            x: signatureConfig.x,
+            y: signatureConfig.y,
+            width: signatureConfig.width,
+            height: signatureConfig.height,
+        });
+    } catch (error) {
+        throw new Error(`Fehler beim Einfügen der Unterschrift: ${error.message}`);
+    }
+}
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -39,8 +104,11 @@ app.get('/template', async (req, res) => {
     }
 });
 
-// Store webhookUrls for PDFs
-const pdfWebhooks = new Map();
+// Fixed webhook URL
+const WEBHOOK_URL = 'https://hook.eu2.make.com/3vxjb8gsift0j84dj4gtrm1sbbq19kon';
+
+// Store PDF data in memory (in production, use a database)
+const pdfStore = new Map();
 
 app.post('/api/pdf-upload', upload.single('pdf'), async (req, res) => {
     try {
@@ -55,17 +123,22 @@ app.post('/api/pdf-upload', upload.single('pdf'), async (req, res) => {
             return res.status(400).send("No PDF file or base64 data provided");
         }
 
-        const filename = 'uploaded_' + uuidv4() + '.pdf';
+        const pdfId = uuidv4();
+        const filename = 'uploaded_' + pdfId + '.pdf';
         await uploadPdfToCloudBucket(pdfBytes, filename);
 
         const pdfUrl = await getCloudBucketUrl(filename);
+        const signUrl = `/sign/${pdfId}`;
 
-        // Store webhook URL if provided
-        if (req.body.webhookUrl) {
-            pdfWebhooks.set(filename, req.body.webhookUrl);
-        }
+        // Store PDF data with fixed webhook URL
+        pdfStore.set(pdfId, {
+            filename,
+            pdfUrl,
+            signUrl,
+            webhookUrl: WEBHOOK_URL
+        });
 
-        res.json({ pdfUrl });
+        res.json({ pdfUrl, signUrl });
 
     } catch (error) {
         console.error('Error processing PDF upload:', error);
@@ -98,104 +171,13 @@ app.post('/api/pdf-config', async (req, res) => {
         const templateBytes = await fs.readFile(templatePath);
         const pdfDoc = await PDFDocument.load(templateBytes);
         const pages = pdfDoc.getPages();
-        const page9 = pages[8]; // 0-based index for page 9
-        const page10 = pages[9]; // 0-based index for page 10
         const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-        // Function to draw text fields on a page
-        const drawTextFields = (page, yOffset = 0) => {
-            // Draw labels and text fields
-            for (const [field, value] of Object.entries(textFields)) {
-                if (pdfConfig.labels[field]) {
-                    // Draw label
-                    const labelConfig = pdfConfig.labels[field];
-                    page.drawText(labelConfig.text, {
-                        x: labelConfig.x,
-                        y: labelConfig.y + yOffset,
-                        size: labelConfig.fontSize,
-                        font: helveticaFont,
-                        color: rgb(labelConfig.color.r, labelConfig.color.g, labelConfig.color.b)
-                    });
-
-                    // Draw text field value
-                    if (value && pdfConfig.textFields[field]) {
-                        const fieldConfig = pdfConfig.textFields[field];
-                        page.drawText(value, {
-                            x: fieldConfig.x,
-                            y: fieldConfig.y + yOffset,
-                            size: fieldConfig.fontSize,
-                            font: helveticaFont,
-                            color: rgb(fieldConfig.color.r, fieldConfig.color.g, fieldConfig.color.b)
-                        });
-                    }
-                }
-            }
-        };
 
         const textFields = {
             fullName,
             email,
             location,
             date: date || new Date().toLocaleDateString('de-DE')
-        };
-
-        // Function to add signature and fields to a page
-        const addSignatureToPage = async (page, signatureConfig, signatureData, fields) => {
-            try {
-                const pageWidth = page.getWidth();
-                const pageHeight = page.getHeight();
-                const spacing = 25; // Spacing between fields
-
-                // Draw text fields in order
-                const fieldOrder = ['fullName', 'email', 'location', 'date'];
-                const startY = signatureConfig.textBlockY;
-
-                fieldOrder.forEach((fieldName, index) => {
-                    const y = startY - (index * spacing);
-                    const value = fields[fieldName];
-                    const labelText = pdfConfig.labels[fieldName].text;
-                    
-                    // Draw label
-                    page.drawText(labelText, {
-                        x: 150,
-                        y,
-                        size: 12,
-                        font: helveticaFont,
-                        color: rgb(0, 0, 0)
-                    });
-
-                    // Draw value
-                    page.drawText(value, {
-                        x: 250,
-                        y,
-                        size: 12,
-                        font: helveticaFont,
-                        color: rgb(0, 0, 0)
-                    });
-                });
-
-                // Draw signature label
-                page.drawText(signatureConfig.label.text, {
-                    x: 150,
-                    y: startY - (fieldOrder.length * spacing) - 10,
-                    size: 12,
-                    font: helveticaFont,
-                    color: rgb(0, 0, 0)
-                });
-
-                // Draw signature
-                const signatureImageBytes = Buffer.from(signatureData.split(',')[1], 'base64');
-                const signatureImage = await pdfDoc.embedPng(signatureImageBytes);
-                
-                page.drawImage(signatureImage, {
-                    x: signatureConfig.x,
-                    y: signatureConfig.y,
-                    width: signatureConfig.width,
-                    height: signatureConfig.height,
-                });
-            } catch (error) {
-                throw new Error(`Fehler beim Einfügen der Unterschrift: ${error.message}`);
-            }
         };
 
         // Add withdrawal signature to page 9
@@ -205,7 +187,9 @@ app.post('/api/pdf-config', async (req, res) => {
                     pages[pdfConfig.withdrawalSignature.page],
                     pdfConfig.withdrawalSignature,
                     withdrawalSignature,
-                    textFields
+                    textFields,
+                    pdfDoc,
+                    helveticaFont
                 );
             } catch (error) {
                 console.error("Fehler beim Einfügen der Widerrufsunterschrift:", error);
@@ -221,7 +205,9 @@ app.post('/api/pdf-config', async (req, res) => {
                     pages[pdfConfig.contractSignature.page],
                     pdfConfig.contractSignature,
                     signature,
-                    textFields
+                    textFields,
+                    pdfDoc,
+                    helveticaFont
                 );
             } catch (error) {
                 console.error("Fehler beim Einfügen der Vertragsunterschrift:", error);
@@ -237,36 +223,197 @@ app.post('/api/pdf-config', async (req, res) => {
         const pdfUrl = await getCloudBucketUrl(filename);
         res.json({ pdfUrl });
 
-        // Send webhook notification if URL was provided during upload
-        const webhookUrl = pdfWebhooks.get(filename);
-        if (webhookUrl) {
-            try {
-                const fetch = (await import('node-fetch')).default;
-                const response = await fetch(webhookUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        status: 'signed',
-                        pdfUrl,
-                        timestamp: new Date().toISOString()
-                    }),
-                });
-                
-                if (!response.ok) {
-                    console.error(`Webhook failed: ${response.status} ${response.statusText}`);
-                }
-                
-                // Remove webhook URL after sending notification
-                pdfWebhooks.delete(filename);
-            } catch (error) {
-                console.error('Error sending webhook:', error);
+        // Send webhook notification
+        try {
+            const fetch = (await import('node-fetch')).default;
+            const response = await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: 'signed',
+                    pdfUrl,
+                    timestamp: new Date().toISOString()
+                }),
+            });
+            
+            if (!response.ok) {
+                console.error(`Webhook failed: ${response.status} ${response.statusText}`);
             }
+        } catch (error) {
+            console.error('Error sending webhook:', error);
         }
 
     } catch (error) {
         console.error('Fehler bei der PDF-Konfiguration:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Serve the signing page
+app.get('/sign/:pdfId', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'sign.html'));
+});
+
+// Get PDF by ID
+app.get('/api/pdf/:pdfId', async (req, res) => {
+    try {
+        const pdfId = req.params.pdfId;
+        const pdfData = pdfStore.get(pdfId);
+        
+        if (!pdfData) {
+            return res.status(404).json({ error: 'PDF nicht gefunden' });
+        }
+
+        const pdfPath = path.join(__dirname, 'public', pdfData.filename);
+        const pdfBytes = await fs.readFile(pdfPath);
+        
+        res.contentType('application/pdf');
+        res.send(pdfBytes);
+    } catch (error) {
+        console.error('Error serving PDF:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Handle PDF signing
+app.post('/api/sign', async (req, res) => {
+    try {
+        const {
+            fullName,
+            location,
+            email,
+            signature,
+            withdrawalAccepted,
+            withdrawalSignature,
+            pdfId
+        } = req.body;
+
+        if (!fullName || !location || !email || !signature || !pdfId) {
+            return res.status(400).json({ error: 'Alle Felder müssen ausgefüllt werden.' });
+        }
+
+        if (withdrawalAccepted && !withdrawalSignature) {
+            return res.status(400).json({ error: 'Unterschrift für das Erlöschen des Widerrufsrechts fehlt.' });
+        }
+
+        const pdfData = pdfStore.get(pdfId);
+        if (!pdfData) {
+            return res.status(404).json({ error: 'PDF nicht gefunden' });
+        }
+
+        // Load the PDF
+        const pdfPath = path.join(__dirname, 'public', pdfData.filename);
+        const pdfBytes = await fs.readFile(pdfPath);
+        const pdfDoc = await PDFDocument.load(pdfBytes);
+        const pages = pdfDoc.getPages();
+        const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+        const textFields = {
+            fullName,
+            email,
+            location,
+            date: new Date().toLocaleDateString('de-DE')
+        };
+
+        // Add withdrawal signature if accepted
+        if (withdrawalAccepted && withdrawalSignature) {
+            try {
+                await addSignatureToPage(
+                    pages[pdfConfig.withdrawalSignature.page],
+                    pdfConfig.withdrawalSignature,
+                    withdrawalSignature,
+                    textFields,
+                    pdfDoc,
+                    helveticaFont
+                );
+            } catch (error) {
+                console.error("Fehler beim Einfügen der Widerrufsunterschrift:", error);
+                res.status(500).json({ error: "Fehler beim Einfügen der Widerrufsunterschrift: " + error.message });
+                return;
+            }
+        }
+
+        // Add contract signature
+        try {
+            await addSignatureToPage(
+                pages[pdfConfig.contractSignature.page],
+                pdfConfig.contractSignature,
+                signature,
+                textFields,
+                pdfDoc,
+                helveticaFont
+            );
+        } catch (error) {
+            console.error("Fehler beim Einfügen der Vertragsunterschrift:", error);
+            res.status(500).json({ error: "Fehler beim Einfügen der Vertragsunterschrift: " + error.message });
+            return;
+        }
+
+        // Save the signed PDF
+        const signedPdfBytes = await pdfDoc.save();
+        const signedFilename = 'signed_' + pdfId + '.pdf';
+        await uploadPdfToCloudBucket(signedPdfBytes, signedFilename);
+
+        const signedPdfUrl = await getCloudBucketUrl(signedFilename);
+
+        // Send webhook notification
+        try {
+            const fetch = (await import('node-fetch')).default;
+            await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: 'signed',
+                    pdfUrl: signedPdfUrl,
+                    signedBy: {
+                        name: fullName,
+                        email: email,
+                        location: location
+                    },
+                    withdrawalAccepted: withdrawalAccepted,
+                    timestamp: new Date().toISOString()
+                }),
+            });
+        } catch (error) {
+            console.error('Error sending webhook:', error);
+        }
+
+        res.json({ pdfUrl: signedPdfUrl });
+
+    } catch (error) {
+        console.error('Error signing PDF:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Test route to load template PDF
+app.get('/test-template', async (req, res) => {
+    try {
+        const templatePath = path.join(__dirname, 'templates', 'Datenblatt_13000108.pdf');
+        const pdfBytes = await fs.readFile(templatePath);
+        
+        const pdfId = uuidv4();
+        const filename = 'uploaded_' + pdfId + '.pdf';
+        await uploadPdfToCloudBucket(pdfBytes, filename);
+
+        const pdfUrl = await getCloudBucketUrl(filename);
+        const signUrl = `/sign/${pdfId}`;
+
+        // Store PDF data with fixed webhook URL
+        pdfStore.set(pdfId, {
+            filename,
+            pdfUrl,
+            signUrl,
+            webhookUrl: WEBHOOK_URL
+        });
+
+        res.json({ pdfUrl, signUrl });
+    } catch (error) {
+        console.error('Error loading template:', error);
         res.status(500).json({ error: error.message });
     }
 });
