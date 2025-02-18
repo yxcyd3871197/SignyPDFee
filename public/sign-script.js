@@ -157,6 +157,14 @@ async function renderPage(num, container) {
 document.getElementById('signature-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    // Clear all previous error messages
+    document.querySelectorAll('.error-message').forEach(el => {
+        el.style.display = 'none';
+        el.textContent = '';
+    });
+
+    let hasErrors = false;
+
     // Validate all required fields
     const requiredFields = {
         'fullName': 'Bitte geben Sie Ihren Namen ein',
@@ -167,38 +175,49 @@ document.getElementById('signature-form').addEventListener('submit', async (e) =
     for (const [fieldId, errorMessage] of Object.entries(requiredFields)) {
         const field = document.getElementById(fieldId);
         if (!field.value.trim()) {
-            document.getElementById('error-message').textContent = errorMessage;
-            document.getElementById('error-message').style.display = 'block';
-            field.focus();
-            return;
+            const errorElement = field.parentElement.querySelector('.error-message');
+            errorElement.textContent = errorMessage;
+            errorElement.style.display = 'block';
+            if (!hasErrors) {
+                field.focus();
+                hasErrors = true;
+            }
         }
     }
 
     // Validate terms checkbox
     if (!document.getElementById('terms').checked) {
-        document.getElementById('error-message').textContent = 'Bitte stimmen Sie den Vertragsbedingungen zu';
-        document.getElementById('error-message').style.display = 'block';
-        return;
+        const errorElement = document.getElementById('terms').closest('.checkbox-group').querySelector('.error-message');
+        errorElement.textContent = 'Bitte stimmen Sie den Vertragsbedingungen zu';
+        errorElement.style.display = 'block';
+        hasErrors = true;
     }
 
     // Validate contract signature
     if (contractSignaturePad.isEmpty()) {
-        document.getElementById('error-message').textContent = 'Bitte setzen Sie Ihre Vertragsunterschrift';
-        document.getElementById('error-message').style.display = 'block';
-        return;
+        const errorElement = document.getElementById('signature-pad').closest('.signature-group').querySelector('.error-message');
+        errorElement.textContent = 'Bitte setzen Sie Ihre Vertragsunterschrift';
+        errorElement.style.display = 'block';
+        hasErrors = true;
     }
 
-    // Validate withdrawal checkbox and signature (both are required)
+    // Validate withdrawal checkbox and signature
     const withdrawalCheckbox = document.getElementById('withdrawal-checkbox');
     if (!withdrawalCheckbox.checked) {
-        document.getElementById('error-message').textContent = 'Bitte stimmen Sie dem Erlöschen des Widerrufsrechts zu';
-        document.getElementById('error-message').style.display = 'block';
-        return;
+        const errorElement = withdrawalCheckbox.closest('.checkbox-group').querySelector('.error-message');
+        errorElement.textContent = 'Bitte stimmen Sie dem Erlöschen des Widerrufsrechts zu';
+        errorElement.style.display = 'block';
+        hasErrors = true;
     }
 
     if (withdrawalSignaturePad.isEmpty()) {
-        document.getElementById('error-message').textContent = 'Bitte setzen Sie Ihre Unterschrift für das Erlöschen des Widerrufsrechts';
-        document.getElementById('error-message').style.display = 'block';
+        const errorElement = document.getElementById('withdrawal-signature-pad').closest('.signature-group').querySelector('.error-message');
+        errorElement.textContent = 'Bitte setzen Sie Ihre Unterschrift für das Erlöschen des Widerrufsrechts';
+        errorElement.style.display = 'block';
+        hasErrors = true;
+    }
+
+    if (hasErrors) {
         return;
     }
 

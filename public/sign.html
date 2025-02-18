@@ -14,7 +14,9 @@
 <body>
     <div class="container">
         <header class="header">
-            <h1>Dokument unterschreiben</h1>
+            <img src="https://darmgesundheitscoach.de/wp-content/uploads/2022/02/Sabina-Empl-13-1.jpg"
+                 alt="Darmgesundheitscoach Logo">
+            <h1>Ausbildungsvertrag</h1>
         </header>
 
         <div id="pdf-container">
@@ -25,16 +27,19 @@
             <div class="form-group">
                 <label for="fullName">Vollständiger Name</label>
                 <input type="text" id="fullName" name="fullName" required>
+                <div class="error-message" style="display: none;"></div>
             </div>
 
             <div class="form-group">
                 <label for="location">Ort</label>
                 <input type="text" id="location" name="location" required>
+                <div class="error-message" style="display: none;"></div>
             </div>
 
             <div class="form-group">
                 <label for="email">E-Mail</label>
                 <input type="email" id="email" name="email" required>
+                <div class="error-message" style="display: none;"></div>
             </div>
 
             <div class="form-group checkbox-group">
@@ -42,6 +47,7 @@
                     <input type="checkbox" id="terms" required>
                     Hiermit stimme ich den Vertragsbedingungen verbindlich zu.
                 </label>
+                <div class="error-message" style="display: none;"></div>
             </div>
 
             <div class="signature-group">
@@ -51,6 +57,7 @@
                 <div class="button-container">
                     <button type="button" id="clear-signature" class="btn-delete">Signatur löschen</button>
                 </div>
+                <div class="error-message" style="display: none;"></div>
             </div>
 
             <div class="form-group checkbox-group">
@@ -61,6 +68,7 @@
                     ich mit dieser Zustimmung mit Beginn der Ausführung des Vertrages mein
                     Widerrufsrecht verliere.
                 </label>
+                <div class="error-message" style="display: none;"></div>
             </div>
 
             <div class="signature-group">
@@ -70,6 +78,7 @@
                 <div class="button-container">
                     <button type="button" id="clear-withdrawal-signature" class="btn-delete">Signatur löschen</button>
                 </div>
+                <div class="error-message" style="display: none;"></div>
             </div>
 
             <div class="form-actions">
@@ -80,7 +89,29 @@
             <div id="success-message" class="success-message" style="display: none;"></div>
         </form>
     </div>
-
+    <footer>
+        <p class="footer-text">
+            <span id="copyright"></span> 
+            <a href="https://darmgesundheitscoach.de/" target="_blank" style="color: #13384a; text-decoration: none;">Darmgesundheitscoach.de</a>
+        </p>
+    </footer>
     <script src="/sign-script.js"></script>
+    <script>
+
+        document.getElementById("copyright").innerHTML = `Copyright © ${new Date().getFullYear()} `;
+
+    </script>
+
+    <style>
+        footer {
+            text-align: center;
+            padding: 10px;
+            margin-top: 20px;
+        }
+        .footer-text {
+            font-size: 14px;
+            color: #13384a;
+        }
+    </style>
 </body>
 </html>

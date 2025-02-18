@@ -151,14 +151,14 @@ input[type="email"]:focus {
     position: absolute;
     top: 1.5rem;
     right: 1.5rem;
-    width: 24px;
-    height: 24px;
+    width: 48px;
+    height: 48px;
     display: none;
 }
 
 .signature-status.signed {
     display: block;
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle fill="%234CAF50" cx="12" cy="12" r="10"/><path fill="white" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>');
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle fill="%234CAF50" cx="12" cy="12" r="10" stroke="%234CAF50" stroke-width="2"/><path fill="white" d="M9.75 15.17L6.83 12.25l-1.42 1.41L9.75 18 19 8.75l-1.41-1.41L9.75 15.17z"/></svg>');
 }
 
 /* Error and Success Messages */
