@@ -137,14 +137,16 @@ app.post('/api/pdf-upload', upload.single('pdf'), async (req, res) => {
         const webhookUrl = new URL(webhookUrlField);
         const vorname = webhookUrl.searchParams.get('vorname');
         const card_id = webhookUrl.searchParams.get('card_id');
-
+        const email = webhookUrl.searchParams.get('email');
+        
         pdfStore.set(pdfId, {
             filename,
             pdfUrl,
             signUrl,
             webhookUrl: WEBHOOK_URL,
             vorname: vorname || null,
-            card_id: card_id || null
+            card_id: card_id || null,
+            email: email || null 
         });
 
         res.json({ pdfUrl, signUrl });
@@ -385,6 +387,7 @@ app.post('/api/sign', async (req, res) => {
                     },
                     vorname: pdfData.vorname,         // Gespeicherte Daten mitsenden
                     card_id: pdfData.card_id,         // Gespeicherte Daten mitsenden
+                    email: pdfData.email,
                     withdrawalAccepted: withdrawalAccepted,
                     timestamp: new Date().toISOString()
                 }),
