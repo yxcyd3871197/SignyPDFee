@@ -123,28 +123,191 @@ input[type="email"]:focus {
     height: 18px;
 }
 
+/* Signature Section Styles */
+.signature-section {
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    position: relative;
+}
+
+.signature-section:nth-child(odd) {
+    background-color: #f8f9fa;
+}
+
+.signature-section:nth-child(even) {
+    background-color: #fff5f5;
+}
+
 /* Signature Group Styles */
 .signature-group {
-    margin: 2rem 0;
+    margin: 1rem 0;
     padding: 1.5rem;
     border: 1px solid #e0e0e0;
     border-radius: var(--border-radius);
-    background-color: #f8f9fa;
+    background-color: white;
     position: relative;
 }
 
 .signature-group h3 {
     margin: 0 0 1rem 0;
     color: #444;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.signature-group canvas {
+.signature-instruction {
+    color: #666;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.signature-pad-container {
+    position: relative;
+    width: 100%;
+}
+
+.signature-pad-container canvas {
     width: 100%;
     height: 200px;
     border: 1px solid #e0e0e0;
     border-radius: var(--border-radius);
     background-color: white;
     touch-action: none;
+}
+
+.btn-reset {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    padding: 4px;
+    border: none;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-reset:hover {
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transform: scale(1.05);
+}
+
+.btn-reset svg {
+    color: #666;
+}
+
+.btn-reset:hover svg {
+    color: #333;
+}
+
+.keyboard-signature-error {
+    color: var(--danger-color);
+    margin-top: 0.5rem;
+    font-size: 14px;
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+    background-color: #ffebee;
+    border: 1px solid var(--danger-color);
+    display: none;
+}
+
+.keyboard-signature-error.show {
+    display: block;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.keyboard-signature.error input[type="text"] {
+    border-color: var(--danger-color);
+}
+
+/* Signature Alternative Styles */
+.signature-alternative {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.signature-option-text {
+    color: #666;
+    margin-bottom: 1rem;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+}
+
+.keyboard-signature {
+    margin-top: 1rem;
+}
+
+.font-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.font-preview {
+    position: relative;
+}
+
+.font-preview input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.preview-label {
+    display: block;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.preview-label {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 4em;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.preview-title {
+    color: #666;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 0.9em;
+}
+
+.preview-signature {
+    font-size: 1.9em;
+}
+
+.font-preview input[type="radio"]:checked + .preview-label {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+}
+
+.dancing-script {
+    font-family: 'Dancing Script', cursive;
+}
+
+.barlow {
+    font-family: 'Barlow Semi Condensed', sans-serif;
 }
 
 .signature-status {
@@ -161,6 +324,21 @@ input[type="email"]:focus {
     background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle fill="%234CAF50" cx="12" cy="12" r="10" stroke="%234CAF50" stroke-width="2"/><path fill="white" d="M9.75 15.17L6.83 12.25l-1.42 1.41L9.75 18 19 8.75l-1.41-1.41L9.75 15.17z"/></svg>');
 }
 
+/* Font Face Declarations */
+@font-face {
+    font-family: 'Dancing Script';
+    src: url('/fonts/DancingScript-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Barlow Semi Condensed';
+    src: url('/fonts/BarlowSemiCondensed-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
 /* Error and Success Messages */
 .error-message {
     color: var(--danger-color);
@@ -175,14 +353,31 @@ input[type="email"]:focus {
 }
 
 .success-message {
-    background-color: var(--success-color);
-    color: white;
+    font-size: 1.25em;
+    background-color: #85d177;
     padding: 1rem;
     border-radius: var(--border-radius);
     text-align: center;
     margin-top: 1rem;
-    font-weight: 500;
     animation: fadeIn 0.3s ease-in-out;
+}
+
+.success-view {
+    max-width: 800px;
+    margin: 2rem auto;
+    text-align: center;
+}
+
+.success-view h2 {
+    font-size: 3em;
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+
+.email-notice {
+    margin-top: 1rem;
+    color: #666;
+    font-size: 1.25em;
 }
 
 @keyframes fadeIn {
@@ -262,6 +457,12 @@ button {
 .btn-submit:disabled {
     background-color: #ccc;
     cursor: not-allowed;
+}
+
+/* Footer Styles */
+.footer-text {
+    text-align: center;
+    margin-top: 2rem;
 }
 
 /* Responsive Design */
