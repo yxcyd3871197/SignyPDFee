@@ -49,51 +49,57 @@ function initSignaturePads() {
     document.getElementById('clear-signature').addEventListener('click', () => {
         contractSignaturePad.clear();
         updateSignatureStatus('signature-pad', false);
-        resetSignatureMethodVisibility('contract');
     });
 
     document.getElementById('clear-withdrawal-signature').addEventListener('click', () => {
         withdrawalSignaturePad.clear();
         updateSignatureStatus('withdrawal-signature-pad', false);
-        resetSignatureMethodVisibility('withdrawal');
     });
 
-    // Handle withdrawal checkbox
+    // Handle withdrawal checkbox - only for validation, not for disabling inputs
     const withdrawalCheckbox = document.getElementById('withdrawal-checkbox');
-    const withdrawalSignatureCanvas = document.getElementById('withdrawal-signature-pad');
-    const clearWithdrawalButton = document.getElementById('clear-withdrawal-signature');
+    
+    // No need to disable inputs based on checkbox state
+    // The validation will still happen on form submission
+}
 
-    withdrawalCheckbox.addEventListener('change', function() {
-        const signatureGroup = withdrawalSignatureCanvas.closest('.signature-group');
-        const hasKeyboardSignature = document.getElementById('withdrawalKeyboardSignature').value.trim() !== '';
-        
-        if (this.checked) {
-            if (!hasKeyboardSignature) {
-                // Only enable SignPad if no keyboard signature exists
-                withdrawalSignatureCanvas.style.opacity = '1';
-                withdrawalSignatureCanvas.style.pointerEvents = 'auto';
-                clearWithdrawalButton.disabled = false;
-                signatureGroup.style.opacity = '1';
-            } else {
-                // Keep SignPad disabled if keyboard signature exists
-                withdrawalSignatureCanvas.style.opacity = '0.5';
-                withdrawalSignatureCanvas.style.pointerEvents = 'none';
-                clearWithdrawalButton.disabled = true;
-                signatureGroup.style.opacity = '0.5';
-            }
-        } else {
-            withdrawalSignatureCanvas.style.opacity = '0.5';
-            withdrawalSignatureCanvas.style.pointerEvents = 'none';
-            clearWithdrawalButton.disabled = true;
-            signatureGroup.style.opacity = '0.5';
-            withdrawalSignaturePad.clear();
-            updateSignatureStatus('withdrawal-signature-pad', false);
-            resetSignatureMethodVisibility('withdrawal');
-        }
-    });
+// Clear signature pad
+function clearSignaturePad(type) {
+    const signaturePad = type === 'contract' ? contractSignaturePad : withdrawalSignaturePad;
+    signaturePad.clear();
+    updateSignatureStatus(type === 'contract' ? 'signature-pad' : 'withdrawal-signature-pad', false);
+}
 
-    // Initial withdrawal signature pad state
-    withdrawalCheckbox.dispatchEvent(new Event('change'));
+// Enable keyboard signature
+function enableKeyboardSignature(type) {
+    const signPadSection = document.getElementById(type === 'contract' ? 'signature-pad' : 'withdrawal-signature-pad').closest('.signature-group');
+    const keyboardSection = document.getElementById(type === 'contract' ? 'keyboardSignature' : 'withdrawalKeyboardSignature').closest('.keyboard-signature');
+    
+    signPadSection.style.opacity = '0.5';
+    signPadSection.style.pointerEvents = 'none';
+    keyboardSection.style.opacity = '1';
+    keyboardSection.style.pointerEvents = 'auto';
+}
+
+// Disable keyboard signature
+function disableKeyboardSignature(type) {
+    const keyboardSection = document.getElementById(type === 'contract' ? 'keyboardSignature' : 'withdrawalKeyboardSignature').closest('.keyboard-signature');
+    keyboardSection.style.opacity = '0.5';
+    keyboardSection.style.pointerEvents = 'none';
+}
+
+// Enable SignPad
+function enableSignPad(type) {
+    const signPadSection = document.getElementById(type === 'contract' ? 'signature-pad' : 'withdrawal-signature-pad').closest('.signature-group');
+    signPadSection.style.opacity = '1';
+    signPadSection.style.pointerEvents = 'auto';
+}
+
+// Disable SignPad
+function disableSignPad(type) {
+    const signPadSection = document.getElementById(type === 'contract' ? 'signature-pad' : 'withdrawal-signature-pad').closest('.signature-group');
+    signPadSection.style.opacity = '0.5';
+    signPadSection.style.pointerEvents = 'none';
 }
 
 // Reset signature method visibility
@@ -103,7 +109,7 @@ function resetSignatureMethodVisibility(type) {
     
     signPadSection.style.opacity = '1';
     keyboardSection.style.opacity = '1';
-    signPadSection.style.pointerEvents = 'auto';
+    keyboardSection.style.pointerEvents = 'auto';
     keyboardSection.style.pointerEvents = 'auto';
 }
 
@@ -131,7 +137,7 @@ async function loadPDF() {
 
         const response = await fetch(`/api/pdf/${pdfId}`);
         if (!response.ok) {
-            throw new Error('PDF nicht gefunden');
+            throw new Error('Fehler beim Laden des PDFs');
         }
         const pdfData = await response.arrayBuffer();
         
@@ -150,8 +156,6 @@ async function loadPDF() {
         console.error('Fehler beim Laden des PDFs:', error);
         document.getElementById('error-message').textContent = 'Fehler beim Laden des PDFs: ' + error.message;
         document.getElementById('error-message').style.display = 'block';
-        // Hide the PDF container on error
-        document.getElementById('pdf-container').style.display = 'none';
     }
 }
 
@@ -201,11 +205,11 @@ function initKeyboardSignatures() {
     }
 
     function validateSignatures() {
-        const contractValue = contractInput.value.trim();
-        const withdrawalValue = withdrawalInput.value.trim();
+        const contractValue = document.getElementById('keyboardSignature').value.trim();
+        const withdrawalValue = document.getElementById('withdrawalKeyboardSignature').value.trim();
         
-        const contractError = contractInput.closest('.keyboard-signature').querySelector('.keyboard-signature-error');
-        const withdrawalError = withdrawalInput.closest('.keyboard-signature').querySelector('.keyboard-signature-error');
+        const contractError = document.getElementById('keyboardSignature').closest('.keyboard-signature').querySelector('.keyboard-signature-error');
+        const withdrawalError = document.getElementById('withdrawalKeyboardSignature').closest('.keyboard-signature').querySelector('.keyboard-signature-error');
         
         if (contractValue && withdrawalValue && contractValue !== withdrawalValue) {
             const errorMessage = 'Die eingegebenen Unterschriften stimmen nicht überein. Bitte stellen Sie sicher, dass beide Unterschriften identisch sind.';
@@ -263,56 +267,65 @@ function initKeyboardSignatures() {
     updatePreview(contractInput, [contractDancingLabel, contractBarlowLabel]);
     updatePreview(withdrawalInput, [withdrawalDancingLabel, withdrawalBarlowLabel]);
 
-    return { validateSignatures };
+    return {
+        validateSignatures
+    };
 }
 
 // Initialize keyboard signatures
 const keyboardSignatures = initKeyboardSignatures();
 
-// Initialize when page loads
-window.addEventListener('load', () => {
-    initSignaturePads();
+// Handle signature method selection
+function handleSignatureMethodSelection(type, method) {
+    // Get the buttons
+    const signpadButton = document.getElementById(type === 'contract' ? 'signpad-button' : 'withdrawal-signpad-button');
+    const keyboardButton = document.getElementById(type === 'contract' ? 'keyboard-button' : 'withdrawal-keyboard-button');
     
-    // Monitor signature pads for changes after initialization
-    ['signature-pad', 'withdrawal-signature-pad'].forEach(id => {
-        const pad = id === 'signature-pad' ? contractSignaturePad : withdrawalSignaturePad;
+    // Update button active states
+    if (method === 'signpad') {
+        signpadButton.classList.add('active');
+        keyboardButton.classList.remove('active');
         
-        pad.addEventListener('endStroke', () => {
-            const isContract = id === 'signature-pad';
-            const type = isContract ? 'contract' : 'withdrawal';
-            const inputId = isContract ? 'keyboardSignature' : 'withdrawalKeyboardSignature';
+        // Enable SignPad and disable keyboard
+        enableSignPad(type);
+        disableKeyboardSignature(type);
+        
+        // Check if there's content in the keyboard signature
+        const keyboardInput = document.getElementById(type === 'contract' ? 'keyboardSignature' : 'withdrawalKeyboardSignature');
+        if (keyboardInput.value.trim() !== '') {
+            // Clear keyboard signature when switching to SignPad
+            keyboardInput.value = '';
             
-            if (!pad.isEmpty()) {
-                // If SignPad is being used, disable keyboard signature
-                const keyboardSection = document.getElementById(inputId).closest('.keyboard-signature');
-                keyboardSection.style.opacity = '0.5';
-                keyboardSection.style.pointerEvents = 'none';
-                document.getElementById(inputId).value = '';
-                
-                // Clear preview text
-                const dancingLabel = document.querySelector(`label[for="${type}-dancing"]`);
-                const barlowLabel = document.querySelector(`label[for="${type}-barlow"]`);
+            // Update preview labels
+            const dancingLabel = document.querySelector(`label[for="${type}-dancing"]`);
+            const barlowLabel = document.querySelector(`label[for="${type}-barlow"]`);
+            if (dancingLabel && barlowLabel) {
                 [dancingLabel, barlowLabel].forEach(label => {
-                    if (label) {
-                        label.innerHTML = `
-                            <span class="preview-title">Diese Unterschrift wählen</span>
-                            <span class="preview-signature">${label.closest('.keyboard-signature').querySelector('input[type="text"]').placeholder}</span>
-                        `;
-                    }
+                    label.innerHTML = `
+                        <span class="preview-title">Diese Unterschrift wählen</span>
+                        <span class="preview-signature">${keyboardInput.placeholder}</span>
+                    `;
                 });
-            } else {
-                resetSignatureMethodVisibility(type);
             }
-            updateSignatureStatus(id, !pad.isEmpty());
-        });
-    });
-
-    // Set initial radio button states
-    document.getElementById('contract-dancing').checked = true;
-    document.getElementById('withdrawal-dancing').checked = true;
-    
-    loadPDF();
-});
+        }
+    } else if (method === 'keyboard') {
+        keyboardButton.classList.add('active');
+        signpadButton.classList.remove('active');
+        
+        // Enable keyboard and disable SignPad
+        enableKeyboardSignature(type);
+        disableSignPad(type);
+        
+        // Clear SignPad when switching to keyboard
+        if (type === 'contract') {
+            contractSignaturePad.clear();
+            updateSignatureStatus('signature-pad', false);
+        } else {
+            withdrawalSignaturePad.clear();
+            updateSignatureStatus('withdrawal-signature-pad', false);
+        }
+    }
+}
 
 // Helper function to get keyboard signature data
 function getKeyboardSignatureData(inputId, radioName) {
@@ -481,4 +494,73 @@ document.getElementById('signature-form').addEventListener('submit', async (e) =
         document.getElementById('error-message').textContent = 'Fehler beim Signieren: ' + error.message;
         document.getElementById('error-message').style.display = 'block';
     }
+});
+
+// Initialize when page loads
+window.addEventListener('load', () => {
+    initSignaturePads();
+    loadPDF();
+    
+    // Monitor signature pads for changes after initialization
+    ['signature-pad', 'withdrawal-signature-pad'].forEach(id => {
+        const pad = id === 'signature-pad' ? contractSignaturePad : withdrawalSignaturePad;
+        
+        pad.addEventListener('endStroke', () => {
+            const isContract = id === 'signature-pad';
+            const type = isContract ? 'contract' : 'withdrawal';
+            const inputId = isContract ? 'keyboardSignature' : 'withdrawalKeyboardSignature';
+            
+            if (!pad.isEmpty()) {
+                // If SignPad is being used, disable keyboard signature
+                const keyboardSection = document.getElementById(inputId).closest('.keyboard-signature');
+                keyboardSection.style.opacity = '0.5';
+                keyboardSection.style.pointerEvents = 'none';
+                document.getElementById(inputId).value = '';
+                
+                // Clear preview text
+                const dancingLabel = document.querySelector(`label[for="${type}-dancing"]`);
+                const barlowLabel = document.querySelector(`label[for="${type}-barlow"]`);
+                [dancingLabel, barlowLabel].forEach(label => {
+                    if (label) {
+                        label.innerHTML = `
+                            <span class="preview-title">Diese Unterschrift wählen</span>
+                            <span class="preview-signature">${label.closest('.keyboard-signature').querySelector('input[type="text"]').placeholder}</span>
+                        `;
+                    } else {
+                        console.warn('Label not found for type:', type);
+                    }
+                });
+            }
+            updateSignatureStatus(id, !pad.isEmpty());
+        });
+    });
+
+    // Set initial radio button states
+    document.getElementById('contract-dancing').checked = true;
+    document.getElementById('withdrawal-dancing').checked = true;
+
+    // Set initial signature method selection
+    handleSignatureMethodSelection('contract', 'signpad');
+    handleSignatureMethodSelection('withdrawal', 'signpad');
+
+    // Disable keyboard signature on load
+    disableKeyboardSignature('contract');
+    disableKeyboardSignature('withdrawal');
+
+    // Set event listeners for signature method selection buttons
+    document.getElementById('signpad-button').addEventListener('click', () => {
+        handleSignatureMethodSelection('contract', 'signpad');
+    });
+
+    document.getElementById('keyboard-button').addEventListener('click', () => {
+        handleSignatureMethodSelection('contract', 'keyboard');
+    });
+
+    document.getElementById('withdrawal-signpad-button').addEventListener('click', () => {
+        handleSignatureMethodSelection('withdrawal', 'signpad');
+    });
+
+    document.getElementById('withdrawal-keyboard-button').addEventListener('click', () => {
+        handleSignatureMethodSelection('withdrawal', 'keyboard');
+    });
 });

@@ -42,9 +42,19 @@
                 <div class="error-message" style="display: none;"></div>
             </div>
 
+            <h1 style="text-align: center;">1. Unterschrift</h1>
+            
+            <!-- Signature Method Selection -->
+            <div class="signature-method-selection">
+                <h3>Wie willst du unterzeichnen?</h3>
+                <button type="button" id="signpad-button" class="btn-secondary active">Mit Maus/Touchpad</button>
+                <button type="button" id="keyboard-button" class="btn-secondary">Mit Tastatur</button>
+                <p class="signature-option-text">💡Es reicht aus, eine der beiden Optionen zu nutzen: SignPad (Maus/Touch) oder Tastatur.</p>
+            </div>
+            
             <div class="form-group checkbox-group">
                 <label class="checkbox-label">
-                    <input type="checkbox" id="terms" required>
+                        <input type="checkbox" id="terms" required>
                     Hiermit stimme ich den Vertragsbedingungen verbindlich zu.
                 </label>
                 <div class="error-message" style="display: none;"></div>
@@ -54,40 +64,46 @@
             <div class="signature-section">
                 <div class="signature-group">
                     <h3>Unterschrift Vertrag per SignPad</h3>
+                    <p class="signature-instruction">Bitte mit gedrückter Maustaste oder per Touch im Feld unterschreiben.</p>
                     <div class="signature-pad-container">
                         <canvas id="signature-pad"></canvas>
-                        <button type="button" id="clear-signature" class="btn-reset" title="Signatur zurücksetzen">
-                            <svg viewBox="0 0 24 24" width="24" height="24">
-                                <path fill="currentColor" d="M12 5V2L8 6l4 4V7c3.31 0 6 2.69 6 6 0 2.97-2.17 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93 0-4.42-3.58-8-8-8zm-6 8c0-1.65.67-3.15 1.76-4.24L6.34 7.34C4.9 8.79 4 10.79 4 13c0 4.08 3.05 7.44 7 7.93v-2.02c-2.83-.48-5-2.94-5-5.91z"/>
-                            </svg>
-                        </button>
                     </div>
-                    <p class="signature-instruction">Bitte mit gedrückter Maustaste oder per Touch im Feld unterschreiben.</p>
+                    <div class="signature-buttons">
+                        <button type="button" id="clear-signature" class="btn-secondary">Unterschrift löschen</button>
+                    </div>
                     <div class="signature-status"></div>
                     <div class="error-message" style="display: none;"></div>
                 </div>
 
-                <div class="signature-alternative">
-                    <p class="signature-option-text">Es reicht aus, eine der beiden Optionen zu nutzen: SignPad (Maus/Touch) oder Tastatur. Falls beide genutzt werden, ist das sogar besser.</p>
-                    <div class="keyboard-signature">
-                        <label for="keyboardSignature">Unterschrift Vertrag per Tastatur</label>
-                        <input type="text" id="keyboardSignature" placeholder="Hier Deinen Namen zum unterzeichnen eintragen">
-                        <div class="keyboard-signature-error" style="display: none;"></div>
-                        <div class="font-preview-grid">
-                            <div class="font-preview">
-                                <input type="radio" name="contract-font" value="DancingScript-Regular" id="contract-dancing">
-                                <label for="contract-dancing" class="preview-label dancing-script"></label>
-                            </div>
-                            <div class="font-preview">
-                                <input type="radio" name="contract-font" value="BarlowSemiCondensed-Regular" id="contract-barlow">
-                                <label for="contract-barlow" class="preview-label barlow"></label>
+                    <div class="signature-alternative">
+                        <div class="keyboard-signature">
+                            <label for="keyboardSignature">Unterschrift Vertrag per Tastatur</label>
+                            <input type="text" id="keyboardSignature" placeholder="Hier Deinen Namen zum unterzeichnen eintragen" style="width: 100%;">
+                            <div class="keyboard-signature-error" style="display: none;"></div>
+                            <div class="font-preview-grid">
+                                <div class="font-preview">
+                                    <input type="radio" name="contract-font" value="DancingScript-Regular" id="contract-dancing">
+                                    <label for="contract-dancing" class="preview-label dancing-script"></label>
+                                </div>
+                                <div class="font-preview">
+                                    <input type="radio" name="contract-font" value="BarlowSemiCondensed-Regular" id="contract-barlow">
+                                    <label for="contract-barlow" class="preview-label barlow"></label>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
             </div>
 
-            <!-- Withdrawal Checkbox -->
+            <h1 style="text-align: center;">2. Unterschrift</h1>
+            
+            <!-- Signature Method Selection for Withdrawal -->
+            <div class="signature-method-selection">
+                <h3>Wie willst du unterzeichnen?</h3>
+                <button type="button" id="withdrawal-signpad-button" class="btn-secondary active">Mit Maus/Touchpad</button>
+                <button type="button" id="withdrawal-keyboard-button" class="btn-secondary">Mit Tastatur</button>
+                <p class="signature-option-text">💡Es reicht aus, eine der beiden Optionen zu nutzen: SignPad (Maus/Touch) oder Tastatur.</p>
+            </div>
+
             <div class="form-group checkbox-group">
                 <label class="checkbox-label">
                         <input type="checkbox" id="withdrawal-checkbox" required>
@@ -103,44 +119,41 @@
             <div class="signature-section">
                 <div class="signature-group">
                     <h3>Unterschrift Erlöschen des Widerrufsrechts per SignPad</h3>
+                    <p class="signature-instruction">Bitte mit gedrückter Maustaste oder per Touch im Feld unterschreiben.</p>
                     <div class="signature-pad-container">
                         <canvas id="withdrawal-signature-pad"></canvas>
-                        <button type="button" id="clear-withdrawal-signature" class="btn-reset" title="Signatur zurücksetzen">
-                            <svg viewBox="0 0 24 24" width="24" height="24">
-                                <path fill="currentColor" d="M12 5V2L8 6l4 4V7c3.31 0 6 2.69 6 6 0 2.97-2.17 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93 0-4.42-3.58-8-8-8zm-6 8c0-1.65.67-3.15 1.76-4.24L6.34 7.34C4.9 8.79 4 10.79 4 13c0 4.08 3.05 7.44 7 7.93v-2.02c-2.83-.48-5-2.94-5-5.91z"/>
-                            </svg>
-                        </button>
                     </div>
-                    <p class="signature-instruction">Bitte mit gedrückter Maustaste oder per Touch im Feld unterschreiben.</p>
+                    <div class="signature-buttons">
+                        <button type="button" id="clear-withdrawal-signature" class="btn-secondary">Unterschrift löschen</button>
+                    </div>
                     <div class="signature-status"></div>
                     <div class="error-message" style="display: none;"></div>
                 </div>
 
-                <div class="signature-alternative">
-                    <p class="signature-option-text">Es reicht aus, eine der beiden Optionen zu nutzen: SignPad (Maus/Touch) oder Tastatur. Falls beide genutzt werden, ist das sogar besser.</p>
-                    <div class="keyboard-signature">
-                        <label for="withdrawalKeyboardSignature">Unterschrift Erlöschen des Widerrufsrechts per Tastatur</label>
-                        <input type="text" id="withdrawalKeyboardSignature" placeholder="Hier Deinen Namen zum unterzeichnen eintragen">
-                        <div class="keyboard-signature-error" style="display: none;"></div>
-                        <div class="font-preview-grid">
-                            <div class="font-preview">
-                                <input type="radio" name="withdrawal-font" value="DancingScript-Regular" id="withdrawal-dancing">
-                                <label for="withdrawal-dancing" class="preview-label dancing-script"></label>
-                            </div>
-                            <div class="font-preview">
-                                <input type="radio" name="withdrawal-font" value="BarlowSemiCondensed-Regular" id="withdrawal-barlow">
-                                <label for="withdrawal-barlow" class="preview-label barlow"></label>
+                    <div class="signature-alternative">
+                        <div class="keyboard-signature">
+                            <label for="withdrawalKeyboardSignature">Unterschrift Erlöschen des Widerrufsrechts per Tastatur</label>
+                            <input type="text" id="withdrawalKeyboardSignature" placeholder="Hier Deinen Namen zum unterzeichnen eintragen" style="width: 100%;">
+                            <div class="keyboard-signature-error" style="display: none;"></div>
+                            <div class="font-preview-grid">
+                                <div class="font-preview">
+                                    <input type="radio" name="withdrawal-font" value="DancingScript-Regular" id="withdrawal-dancing">
+                                    <label for="withdrawal-dancing" class="preview-label dancing-script"></label>
+                                </div>
+                                <div class="font-preview">
+                                    <input type="radio" name="withdrawal-font" value="BarlowSemiCondensed-Regular" id="withdrawal-barlow">
+                                    <label for="withdrawal-barlow" class="preview-label barlow"></label>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
             </div>
             <div class="form-actions">
-                <button type="submit" id="submit-form" class="btn-submit">Unterschreiben & Absenden</button>
+                <button type="submit" id="submit-form" class="btn-submit">Bestätigen & Absenden</button>
             </div>
 
             <div id="error-message" class="error-message" style="display: none;"></div>
-            <div id="success-message" class="success-message" style="display: none;"></div>
+            <div id="success-message" style="display: none;"></div>
         </form>
     </div>
     <footer>

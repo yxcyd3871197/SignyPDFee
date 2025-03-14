@@ -123,6 +123,27 @@ input[type="email"]:focus {
     height: 18px;
 }
 
+/* Signature Method Selection */
+.signature-method-selection {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.signature-method-selection h3 {
+    margin-bottom: 10px;
+    color: #444;
+}
+
+.signature-method-selection .btn-secondary {
+    margin: 0 5px;
+    transition: all 0.2s;
+}
+
+.signature-method-selection .btn-secondary.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
 /* Signature Section Styles */
 .signature-section {
     margin: 20px 0;
@@ -178,36 +199,29 @@ input[type="email"]:focus {
     touch-action: none;
 }
 
-.btn-reset {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 32px;
-    height: 32px;
-    padding: 4px;
-    border: none;
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.9);
-    cursor: pointer;
+.signature-buttons {
     display: flex;
-    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
     justify-content: center;
-    transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.btn-reset:hover {
-    background-color: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    transform: scale(1.05);
-}
-
-.btn-reset svg {
-    color: #666;
-}
-
-.btn-reset:hover svg {
+.btn-secondary {
+    background-color: #f0f0f0;
     color: #333;
+    border: 1px solid #ccc;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background-color: #e0e0e0;
+    box-shadow: var(--box-shadow);
 }
 
 .keyboard-signature-error {
@@ -248,6 +262,18 @@ input[type="email"]:focus {
 
 .keyboard-signature {
     margin-top: 1rem;
+}
+
+.signature-option-box {
+    background-color: #f8f9fa;
+    border-radius: var(--border-radius);
+    padding: 10px;
+    margin-bottom: 1rem;
+}
+
+.keyboard-signature input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .font-preview-grid {
