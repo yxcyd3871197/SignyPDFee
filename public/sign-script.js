@@ -195,7 +195,7 @@ function initKeyboardSignatures() {
     const withdrawalInput = document.getElementById('withdrawalKeyboardSignature');
     
     function updatePreview(input, previewLabels) {
-        const name = input.value || input.placeholder;
+        const name = input.value || " ";
         previewLabels.forEach(label => {
             label.innerHTML = `
                 <span class="preview-title">Diese Unterschrift wählen</span>
@@ -303,7 +303,7 @@ function handleSignatureMethodSelection(type, method) {
                 [dancingLabel, barlowLabel].forEach(label => {
                     label.innerHTML = `
                         <span class="preview-title">Diese Unterschrift wählen</span>
-                        <span class="preview-signature">${keyboardInput.placeholder}</span>
+                        <span class="preview-signature"> </span>
                     `;
                 });
             }
@@ -524,7 +524,7 @@ window.addEventListener('load', () => {
                     if (label) {
                         label.innerHTML = `
                             <span class="preview-title">Diese Unterschrift wählen</span>
-                            <span class="preview-signature">${label.closest('.keyboard-signature').querySelector('input[type="text"]').placeholder}</span>
+                            <span class="preview-signature"> </span>
                         `;
                     } else {
                         console.warn('Label not found for type:', type);
